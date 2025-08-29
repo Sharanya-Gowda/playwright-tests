@@ -1,20 +1,31 @@
 import asyncio
 import json
 from playwright.async_api import async_playwright, TimeoutError, Error
-
+import os
+from dotenv import load_dotenv
 OUTPUT_FILE = "products.json"
 
-USERNAME = "sharanyamavinaguni@gmail.com"
-PASSWORD = "AG2QBIJt"
+# with open("config.json") as f:
+#     cfg = json.load(f)
+
+
+USERNAME = os.getenv("SCRAPER_USERNAME")
+PASSWORD = os.getenv("SCRAPER_PASSWORD")
 LOGIN_URL = "https://hiring.idenhq.com/"
 
+# USERNAME = "sharanyamavinaguni@gmail.com"
+# PASSWORD = "AG2QBIJt"
+# LOGIN_URL = "https://hiring.idenhq.com/"
+
 # -------- SCRAPER FUNCTION --------
-# -------- SCRAPER FUNCTION --------
-async def scrape_products(page, seen_products, products, autosave_interval=20):
+FAILED_FILE = "failed_products.json"
+
+async def scrape_products(page, seen_products, products,autosave_interval=20):
     product_cards = await page.query_selector_all(
         "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.animate-fade-in"
     )
     new_count = 0
+    failed_products = []  # 📝 store failed ones here
 
     for card in product_cards:
         try:
@@ -23,6 +34,10 @@ async def scrape_products(page, seen_products, products, autosave_interval=20):
             # Product Name
             name_el = await card.query_selector("h3.font-semibold.tracking-tight.text-lg")
             product["name"] = (await name_el.inner_text()).strip() if name_el else ""
+            if not product["name"]:
+                # 🚨 No name = skip, but log
+                failed_products.append({"reason": "Missing name", "html": await card.inner_html()})
+                continue  
 
             # Category
             category_el = await card.query_selector(
@@ -31,7 +46,7 @@ async def scrape_products(page, seen_products, products, autosave_interval=20):
             product["category"] = (await category_el.inner_text()).strip() if category_el else ""
 
             # Attributes
-            product["attributes"] = {}
+            attributes = {}
             pairs = await card.query_selector_all("dl > div")
             for pair in pairs:
                 dt = await pair.query_selector("dt")
@@ -39,11 +54,13 @@ async def scrape_products(page, seen_products, products, autosave_interval=20):
                 if dt and dd:
                     key = (await dt.inner_text()).strip(": ").strip()
                     val = (await dd.inner_text()).strip()
-                    product["attributes"][key] = val
+                    attributes[key] = val
 
-            # Deduplication
+            product["attributes"] = attributes
+
+            # ✅ Only append if complete
             key = f"{product['name']}|{product['category']}"
-            if key not in seen_products and product["name"]:
+            if key not in seen_products:
                 seen_products.add(key)
                 products.append(product)
                 new_count += 1
@@ -55,16 +72,29 @@ async def scrape_products(page, seen_products, products, autosave_interval=20):
                     print(f"💾 Autosaved progress: {len(products)} products")
 
         except Exception as e:
+            # ⛔ If scraping failed mid-way
+            failed_products.append({
+                "reason": str(e),
+                "html": await card.inner_html()
+            })
             print(f"⚠️ Error scraping product card: {e}")
             continue
 
+    # 📝 Save failed products separately
+    if failed_products:
+        try:
+            with open(FAILED_FILE, "a", encoding="utf-8") as f:
+                json.dump(failed_products, f, indent=2, ensure_ascii=False)
+                f.write("\n")
+            print(f"🚨 Logged {len(failed_products)} failed products into {FAILED_FILE}")
+        except Exception as e:
+            print(f"⚠️ Failed to save failed products: {e}")
+
     return new_count
-
-
 
 # -------- SAFE CLICK HELPER --------
 async def safe_click(page, selector, label, timeout=15000):
-    print(f"🔎 Waiting for {label}...")
+    #print(f"🔎 Waiting for {label}...")
     try:
         btn = await page.wait_for_selector(selector, timeout=timeout, state="visible")
         await btn.scroll_into_view_if_needed()
@@ -78,8 +108,10 @@ async def safe_click(page, selector, label, timeout=15000):
 
 
 # -------- MAIN RUN FUNCTION --------
+
 async def run():
     products, seen_products = [], set()
+    failed_products = []   # ⬅️ Track failed ones
     context = None
     page = None
 
@@ -87,10 +119,12 @@ async def run():
         async with async_playwright() as p:
             context = await p.chromium.launch_persistent_context(
                 user_data_dir="./user_data",
-                headless=False
-            )
+                headless=False            )
+            
             page = await context.new_page()
+            
             await page.goto(LOGIN_URL)
+            
 
             # --- LOGIN ---
             if await page.query_selector("input#email"):
@@ -119,10 +153,6 @@ async def run():
                 # Scrape visible products
                 await scrape_products(page, seen_products, products)
 
-                # Save incrementally
-                with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(products, f, indent=2, ensure_ascii=False)
-
                 # Scroll to bottom for lazy-load
                 await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
                 await page.wait_for_timeout(2000)
@@ -137,7 +167,9 @@ async def run():
                 # Check if new products appeared
                 if len(products) == before:
                     # Try next page
-                    next_btn = await page.query_selector("button:has-text('Next')")
+                    next_btn = await page.query_selector("button:has-text('Next')") or \
+                               await page.query_selector("button[aria-label='Next']")
+
                     if next_btn and await next_btn.is_enabled():
                         print("➡️ Moving to next page...")
                         await next_btn.click()
@@ -155,7 +187,19 @@ async def run():
         # Always save whatever was scraped
         with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
             json.dump(products, f, indent=2, ensure_ascii=False)
-        print(f"💾 Progress saved: {len(products)} products in {OUTPUT_FILE}")
+
+        # ✅ Save failed products (if any)
+        if failed_products:
+            with open("failed_products.json", "w", encoding="utf-8") as f:
+                json.dump(failed_products, f, indent=2, ensure_ascii=False)
+
+        # 📊 Final Summary Report
+        print("\n📌 SCRAPING SUMMARY")
+        print(f"   ✅ Success: {len(products)} products")
+        print(f"   ❌ Failed : {len(failed_products)} products")
+        print(f"   💾 Saved  : {OUTPUT_FILE}")
+        if failed_products:
+            print(f"   ⚠️ Check failed_products.json for details")
 
         # Close browser if still open
         if context:
@@ -165,7 +209,10 @@ async def run():
                 pass
         print("👋 Exiting scraper.")
 
-
 # -------- ENTRY POINT --------
 if __name__ == "__main__":
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
+    except KeyboardInterrupt:
+        print("\n🛑 Scraper interrupted by user. Progress saved, exiting gracefully...")
+
