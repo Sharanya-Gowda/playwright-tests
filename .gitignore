@@ -1,0 +1,37 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+dist/
+build/
+
+# ---- Virtual Environment ----
+.venv/
+env/
+venv/
+ENV/
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# ---- Playwright / Browser Data ----
+user_data/
+*.log
+*.trace.zip
+*.har
+
+# ---- Local Session & Cache ----
+session.json
+
+# ---- Scraped Data (don’t commit large JSON) ----
+products.json
+page_debug.html
+
+# ---- OS Files ----
+Thumbs.db
