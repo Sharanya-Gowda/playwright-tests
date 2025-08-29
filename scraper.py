@@ -30,6 +30,8 @@ async def scrape_products(page, seen_products, products,autosave_interval=20):
     Returns:
         int: The number of new products successfully scraped and added.
     """
+
+
     product_cards = await page.query_selector_all(
         "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.animate-fade-in"
     )
@@ -101,8 +103,9 @@ async def scrape_products(page, seen_products, products,autosave_interval=20):
 
     return new_count
 
-# -------- SAFE CLICK HELPER --------
 
+
+# -------- SAFE CLICK HELPER --------
 async def safe_click(page, selector, label, timeout=15000):
     """
     Safely clicks an element identified by a selector, with waiting, scrolling, and retry logic.
@@ -116,6 +119,7 @@ async def safe_click(page, selector, label, timeout=15000):
     Raises:
         TimeoutError: If the element is not found within the timeout period.
     """
+
     try:
         btn = await page.wait_for_selector(selector, timeout=timeout, state="visible")
         await btn.scroll_into_view_if_needed()
@@ -128,14 +132,15 @@ async def safe_click(page, selector, label, timeout=15000):
         raise
 
 
-# -------- MAIN RUN FUNCTION --------
 
+# -------- MAIN RUN FUNCTION --------
 async def run():
     """
     Automates the login, navigation, and product scraping process from an inventory web page using Playwright.
 
     Manages persistent login sessions, navigates through paginated product listings, scrapes product data while preventing duplicates, handles lazy-loaded content, and saves both successful and failed scrape results to disk. Provides progress logging and a summary report upon completion or interruption.
     """
+    
     products, seen_products = [], set()
     failed_products = []   # ⬅️ Track failed ones
     context = None
