@@ -11,10 +11,11 @@ A robust Python scraper built with **Playwright** to extract all product data fr
 3. [Requirements](#requirements)  
 4. [Setup](#setup)  
 5. [Usage](#usage)  
-6. [Output](#output)  
-7. [Project Structure](#project-structure)  
-8. [Best Practices](#best-practices)  
-9. [Troubleshooting](#troubleshooting)  
+6. [Viewing Documentation](#viewing-documentation)  
+7. [Output](#output)  
+8. [Project Structure](#project-structure)  
+9. [Best Practices](#best-practices)  
+10. [Troubleshooting](#troubleshooting)  
 
 ---
 
@@ -42,6 +43,7 @@ The IdenHQ Product Scraper automates extraction of product details from IdenHQ i
 - ✅ Save failed products in `failed_products.json`  
 - ✅ Optional **headless mode** for faster scraping  
 - ✅ Robust against page reloads and dynamic content  
+- ✅ Includes **Sphinx documentation** for the project  
 
 ---
 
@@ -99,6 +101,33 @@ python scraper.py
 
 ---
 
+### Viewing Documentation
+
+The project includes Sphinx docs located in the docs folder.
+
+### 1. Build HTML documentation
+
+```bash
+cd docs
+python -m sphinx -b html source build
+```
+
+### 2. Open the docs in a browser
+
+```bash
+# Windows
+start build/index.html
+
+# macOS
+open build/index.html
+
+# Linux
+xdg-open build/index.html
+```
+Use the navigation sidebar or search bar to browse the documentation.
+
+---
+
 ## Output
 
 - `products.json`
@@ -149,3 +178,4 @@ iden_challenge/
 - **Empty products.json:** Check selectors in `scraper.py` match the website structure
 - **TargetClosedError:** Browser closed manually during scraping
 - **Login fails:** Verify `.env` values
+- **Sphinx errors**: Ensure all dependencies are installed (sphinx, sphinx-autodoc-typehints if used)

@@ -37,3 +37,7 @@ page_debug.html
 Thumbs.db
 
 .env
+
+# ---- Sphinx docs ----
+docs/build/
+docs/_build/

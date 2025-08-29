@@ -5,22 +5,31 @@ import os
 from dotenv import load_dotenv
 OUTPUT_FILE = "products.json"
 
-# with open("config.json") as f:
-#     cfg = json.load(f)
-
 
 USERNAME = os.getenv("SCRAPER_USERNAME")
 PASSWORD = os.getenv("SCRAPER_PASSWORD")
 LOGIN_URL = "https://hiring.idenhq.com/"
 
-# USERNAME = "sharanyamavinaguni@gmail.com"
-# PASSWORD = "AG2QBIJt"
-# LOGIN_URL = "https://hiring.idenhq.com/"
 
 # -------- SCRAPER FUNCTION --------
 FAILED_FILE = "failed_products.json"
 
+
 async def scrape_products(page, seen_products, products,autosave_interval=20):
+    """
+    Scrapes product data from the provided page, extracting details from product cards and updating the products list while tracking seen products to avoid duplicates.
+
+    Autosaves progress after a specified interval and logs failed extractions for further review.
+
+    Args:
+        page: The Playwright page object to scrape.
+        seen_products (set): Set to track products already processed.
+        products (list): List to store successfully scraped product data.
+        autosave_interval (int, optional): Number of new products to process before autosaving. Defaults to 20.
+
+    Returns:
+        int: The number of new products successfully scraped and added.
+    """
     product_cards = await page.query_selector_all(
         "div.rounded-lg.border.bg-card.text-card-foreground.shadow-sm.animate-fade-in"
     )
@@ -93,8 +102,20 @@ async def scrape_products(page, seen_products, products,autosave_interval=20):
     return new_count
 
 # -------- SAFE CLICK HELPER --------
+
 async def safe_click(page, selector, label, timeout=15000):
-    #print(f"🔎 Waiting for {label}...")
+    """
+    Safely clicks an element identified by a selector, with waiting, scrolling, and retry logic.
+
+    Args:
+        page: The Playwright page object.
+        selector (str): CSS selector for the target element.
+        label (str): Readable label for logging purposes.
+        timeout (int, optional): Maximum wait time in milliseconds. Defaults to 15000.
+
+    Raises:
+        TimeoutError: If the element is not found within the timeout period.
+    """
     try:
         btn = await page.wait_for_selector(selector, timeout=timeout, state="visible")
         await btn.scroll_into_view_if_needed()
@@ -110,6 +131,11 @@ async def safe_click(page, selector, label, timeout=15000):
 # -------- MAIN RUN FUNCTION --------
 
 async def run():
+    """
+    Automates the login, navigation, and product scraping process from an inventory web page using Playwright.
+
+    Manages persistent login sessions, navigates through paginated product listings, scrapes product data while preventing duplicates, handles lazy-loaded content, and saves both successful and failed scrape results to disk. Provides progress logging and a summary report upon completion or interruption.
+    """
     products, seen_products = [], set()
     failed_products = []   # ⬅️ Track failed ones
     context = None
