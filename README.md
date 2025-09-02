@@ -4,6 +4,12 @@ A robust Python scraper built with **Playwright** to extract all product data fr
 
 ---
 
+# Demo Video
+
+[![Watch the video](https://img.youtube.com/vi/hu4efwtubMo/0.jpg)](https://www.youtube.com/watch?v=hu4efwtubMo)
+
+---
+
 ## Table of Contents
 
 1. [Project Overview](#project-overview)  
