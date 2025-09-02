@@ -148,7 +148,7 @@ Example output:
       "Size": "30×44×24 cm",
       "Material": "Plastic"
     }
-}
+  }
 ]
 ```
 
