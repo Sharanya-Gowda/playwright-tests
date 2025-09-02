@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 OUTPUT_FILE = "products.json"
 
-
+load_dotenv()  # Load environment variables from .env
 USERNAME = os.getenv("SCRAPER_USERNAME")
 PASSWORD = os.getenv("SCRAPER_PASSWORD")
 LOGIN_URL = "https://hiring.idenhq.com/"
