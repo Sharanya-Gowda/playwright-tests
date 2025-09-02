@@ -137,13 +137,17 @@ Example output:
 ```json
 [
   {
-    "name": "Product 1",
-    "category": "Category A",
+    "name": "Innovative Sports Kit",
+    "category": "Sports",
     "attributes": {
-      "Price": "$10",
-      "Stock": "20"
+      "Weight (kg)": "11.68",
+      "Color": "Yellow",
+      "Warranty": "Lifetime",
+      "Price": "$708.77",
+      "Description": "A professional, professional sports product. The Innovative Sports Kit is designed for maximum performance and user satisfaction.",
+      "Size": "30×44×24 cm",
+      "Material": "Plastic"
     }
-  }
 ]
 ```
 
