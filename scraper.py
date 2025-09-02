@@ -150,9 +150,9 @@ async def run():
 
     try:
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=False)
-            context = await browser.new_context()
-
+            context = await p.chromium.launch_persistent_context(
+                user_data_dir="./user_data",
+                headless=False            )
             
             page = await context.new_page()
             
@@ -160,34 +160,15 @@ async def run():
             
 
             # --- LOGIN ---
-            # --- SESSION HANDLING ---
-            if os.path.exists(SESSION_FILE):
-                # Load cookies
-                with open(SESSION_FILE, "r", encoding="utf-8") as f:
-                    session_data = json.load(f)
-                await context.add_cookies(session_data["cookies"])
-                await page.goto(LOGIN_URL)
-                print("✅ Session restored from session.json")
+            if await page.query_selector("input#email"):
+                print("⚠️ Logging in...")
+                await page.fill("input#email", USERNAME)
+                await page.fill("input#password", PASSWORD)
+                await page.click("button:has-text('Sign in')")
+                await page.wait_for_load_state("networkidle", timeout=6000000)
+                print("✅ Login successful!")
             else:
-                # First-time login
-                await page.goto(LOGIN_URL)
-                if await page.query_selector("input#email"):
-                    print("⚠️ Logging in for the first time...")
-                    await page.fill("input#email", USERNAME)
-                    await page.fill("input#password", PASSWORD)
-                    await page.click("button:has-text('Sign in')")
-                    await page.wait_for_load_state("networkidle", timeout=60000)
-                    print("✅ Login successful!")
-
-                    # Save cookies to session.json
-                    cookies = await context.cookies()
-                    session_data = {"cookies": cookies}
-                    with open(SESSION_FILE, "w", encoding="utf-8") as f:
-                        json.dump(session_data, f, indent=2, ensure_ascii=False)
-                    print("💾 Session saved to session.json")
-                else:
-                    print("✅ Already logged in (session detected via persistent context).")
-
+                print("✅ Already logged in.")
 
             # --- NAVIGATION ---
             print("➡️ Navigating to products...")
