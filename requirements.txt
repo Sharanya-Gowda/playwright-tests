@@ -1,0 +1,8 @@
+playwright>=1.44.0
+python-dotenv>=1.0.1
+
+# ---- Optional Utils ----
+requests>=2.32.3
+
+#---- Docs ----
+sphinx>=7.3.7
