@@ -165,7 +165,7 @@ async def run():
                 await page.fill("input#email", USERNAME)
                 await page.fill("input#password", PASSWORD)
                 await page.click("button:has-text('Sign in')")
-                await page.wait_for_load_state("networkidle", timeout=6000000)
+                await page.wait_for_load_state("networkidle", timeout=60000)
                 print("✅ Login successful!")
             else:
                 print("✅ Already logged in.")
